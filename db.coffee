@@ -59,15 +59,12 @@ class DB
 
     _generateDocumentId: (cid) ->
         cid + ((do @_generateIdBlock for i in [1..3]).join '')
+
+    _getDocumentsIds: ->
+        ids = (@storage.key keyId for keyId in [0...@storage.length])
+        (docId for docId in ids when @_validDocumentId docId)
     
-    _getDocumentsIds: (cid) ->
-        keys = (@storage.key keyId for keyId in [0...@storage.length])
-        (docId for docId in keys when @_collectionDocument cid, docId)
-    
-    _collectionDocument: (cid, docId) ->
-        (@_correctDocumentId docId) and docId[0...4] == cid
-    
-    _correctDocumentId: (docId) ->
+    _validDocumentId: (docId) ->
         (new RegExp "^[0-9a-f]{16}$").test docId
 
 class Collection
@@ -82,7 +79,14 @@ class Collection
         @db.get docId
 
     find: ->
-        @db.getAll (@db._getDocumentsIds @cid)
+        @db.getAll (do @_getDocumentsIds)
+    
+    _getDocumentsIds: ->
+        ids = do @db._getDocumentsIds
+        (docId for docId in ids when @_collectionDocument docId)
+
+    _collectionDocument: (docId) ->
+        docId[0...4] == @cid
 
 if @localStorage
     @db = new DB @localStorage
