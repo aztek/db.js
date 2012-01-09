@@ -95,7 +95,10 @@ class Collection
         value = doc[field]
         switch typeof clause
             when "number", "string", "boolean"
-                return value == clause
+                if value instanceof Array
+                    return clause in value
+                else
+                    return value == clause
             else
                 return true
 
