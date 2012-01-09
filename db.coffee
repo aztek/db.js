@@ -1,3 +1,6 @@
+###
+db.js v0.1.0
+###
 class Serializer
     serialize: (object) ->
         JSON.stringify object
