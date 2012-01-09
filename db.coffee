@@ -78,8 +78,27 @@ class Collection
     get: (docId) ->
         @db.get docId
 
-    find: ->
-        @db.getAll (do @_getDocumentsIds)
+    find: (pattern = {}, subset = {}) ->
+        docs = @db.getAll (do @_getDocumentsIds)
+        (@_subset subset, doc for doc in docs when @_matchPattern pattern, doc)
+
+    _matchPattern: (pattern, doc) ->
+        for field, clause of pattern
+            if not @_matchClause doc, field, clause
+                return false
+        return true
+
+    _matchClause: (doc, field, clause) ->
+        value = doc[field]
+        switch typeof clause
+            when "number", "string", "boolean"
+                return value == clause
+            else
+                return true
+
+    _subset: (subset, doc) ->
+        #if subset == {} then return doc
+        doc
     
     _getDocumentsIds: ->
         ids = do @db._getDocumentsIds
