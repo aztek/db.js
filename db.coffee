@@ -31,13 +31,23 @@ class DB
         serializer.deserialize (@_retrieve docId)
 
     getAll: (docIds) ->
-        (@get docId for docId in docIds)
+        @get docId for docId in docIds
+
+    remove: (docId) ->
+        @_delete docId
+        docId
+
+    removeAll: (docIds) ->
+        @_delete docId for docId in docIds
     
     _store: (key, value) ->
         @storage.setItem key, (serializer.serialize value)
 
     _retrieve: (key) ->
         @storage.getItem key
+
+    _delete: (key) ->
+        @storage.removeItem key
 
     _getCollectionsMetainfo: ->
         metainfo = @_retrieve collectionsMetainfoKey
@@ -64,8 +74,8 @@ class DB
         cid + ((do @_generateIdBlock for i in [1..3]).join '')
 
     _getDocumentsIds: ->
-        ids = (@storage.key keyId for keyId in [0...@storage.length])
-        (docId for docId in ids when @_validDocumentId docId)
+        ids = @storage.key keyId for keyId in [0...@storage.length]
+        docId for docId in ids when @_validDocumentId docId
     
     _validDocumentId: (docId) ->
         (new RegExp "^[0-9a-f]{16}$").test docId
@@ -83,7 +93,10 @@ class Collection
 
     find: (pattern = {}, subset = {}) ->
         docs = @db.getAll (do @_getDocumentsIds)
-        (@_subset subset, doc for doc in docs when @_matchPattern pattern, doc)
+        @_subset subset, doc for doc in docs when @_matchPattern pattern, doc
+
+    remove: (pattern = {}) ->
+        @db.remove docId for docId in (do @_getDocumentsIds) when @_matchPattern pattern, (@db.get docId)
 
     _matchPattern: (pattern, doc) ->
         for field, clause of pattern
@@ -108,7 +121,7 @@ class Collection
     
     _getDocumentsIds: ->
         ids = do @db._getDocumentsIds
-        (docId for docId in ids when @_collectionDocument docId)
+        docId for docId in ids when @_collectionDocument docId
 
     _collectionDocument: (docId) ->
         docId[0...4] == @cid

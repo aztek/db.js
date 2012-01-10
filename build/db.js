@@ -66,12 +66,31 @@ db.js v0.1.0
       return _results;
     };
 
+    DB.prototype.remove = function(docId) {
+      this._delete(docId);
+      return docId;
+    };
+
+    DB.prototype.removeAll = function(docIds) {
+      var docId, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = docIds.length; _i < _len; _i++) {
+        docId = docIds[_i];
+        _results.push(this._delete(docId));
+      }
+      return _results;
+    };
+
     DB.prototype._store = function(key, value) {
       return this.storage.setItem(key, serializer.serialize(value));
     };
 
     DB.prototype._retrieve = function(key) {
       return this.storage.getItem(key);
+    };
+
+    DB.prototype._delete = function(key) {
+      return this.storage.removeItem(key);
     };
 
     DB.prototype._getCollectionsMetainfo = function() {
@@ -168,6 +187,20 @@ db.js v0.1.0
         doc = docs[_i];
         if (this._matchPattern(pattern, doc)) {
           _results.push(this._subset(subset, doc));
+        }
+      }
+      return _results;
+    };
+
+    Collection.prototype.remove = function(pattern) {
+      var docId, _i, _len, _ref, _results;
+      if (pattern == null) pattern = {};
+      _ref = this._getDocumentsIds();
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        docId = _ref[_i];
+        if (this._matchPattern(pattern, this.db.get(docId))) {
+          _results.push(this.db.remove(docId));
         }
       }
       return _results;
