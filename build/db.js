@@ -177,57 +177,97 @@ db.js v0.1.0
       return this.db.get(docId);
     };
 
-    Collection.prototype.find = function(pattern, subset) {
+    Collection.prototype.find = function(criteria, subset) {
       var doc, docs, _i, _len, _results;
-      if (pattern == null) pattern = {};
+      if (criteria == null) criteria = {};
       if (subset == null) subset = {};
       docs = this.db.getAll(this._getDocumentsIds());
       _results = [];
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
-        if (this._matchPattern(pattern, doc)) {
+        if (this._matchCriteria(criteria, doc)) {
           _results.push(this._subset(subset, doc));
         }
       }
       return _results;
     };
 
-    Collection.prototype.remove = function(pattern) {
+    Collection.prototype.remove = function(criteria) {
       var docId, _i, _len, _ref, _results;
-      if (pattern == null) pattern = {};
+      if (criteria == null) criteria = {};
       _ref = this._getDocumentsIds();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docId = _ref[_i];
-        if (this._matchPattern(pattern, this.db.get(docId))) {
+        if (this._matchCriteria(criteria, this.db.get(docId))) {
           _results.push(this.db.remove(docId));
         }
       }
       return _results;
     };
 
-    Collection.prototype._matchPattern = function(pattern, doc) {
-      var clause, field;
-      for (field in pattern) {
-        clause = pattern[field];
-        if (!this._matchClause(doc, field, clause)) return false;
+    Collection.prototype._matchCriteria = function(criteria, doc) {
+      var condition, field;
+      switch (typeof criteria) {
+        case "object":
+          for (field in criteria) {
+            condition = criteria[field];
+            if (!this._matchCondition(doc, field, condition)) return false;
+          }
+          return true;
+        case "function":
+          return !!criteria(doc);
+        default:
+          return true;
       }
-      return true;
     };
 
-    Collection.prototype._matchClause = function(doc, field, clause) {
-      var value;
+    Collection.prototype._matchCondition = function(doc, field, condition) {
+      var operand, operator, value;
       value = doc[field];
-      switch (typeof clause) {
+      switch (typeof condition) {
         case "number":
         case "string":
         case "boolean":
           if (value instanceof Array) {
-            return __indexOf.call(value, clause) >= 0;
+            return __indexOf.call(value, condition) >= 0;
           } else {
-            return value === clause;
+            return value === condition;
           }
           break;
+        case "object":
+          for (operator in condition) {
+            operand = condition[operator];
+            if (!this._matchOperator(value, operator, operand)) return false;
+          }
+          return true;
+        case "function":
+          return !!condition(value);
+        default:
+          return true;
+      }
+    };
+
+    Collection.prototype._matchOperator = function(value, operator, operand) {
+      switch (operator) {
+        case "$ne":
+          return value !== operand;
+        case "$gt":
+          return value > operand;
+        case "$gte":
+          return value >= operand;
+        case "$lt":
+          return value < operand;
+        case "$lte":
+          return value <= operand;
+        case "$exists":
+          return operand === (value !== void 0);
+        case "$in":
+          return __indexOf.call(operand, value) >= 0;
+        case "$nin":
+          return __indexOf.call(operand, value) < 0;
+        case "$size":
+          return (value instanceof Array) && (value.length === operand);
         default:
           return true;
       }
