@@ -74,7 +74,7 @@ class DB
         cid + ((do @_generateIdBlock for i in [1..3]).join '')
 
     _getDocumentsIds: ->
-        ids = @storage.key keyId for keyId in [0...@storage.length]
+        ids = (@storage.key keyId for keyId in [0...@storage.length])
         docId for docId in ids when @_validDocumentId docId
     
     _validDocumentId: (docId) ->
@@ -91,33 +91,58 @@ class Collection
     get: (docId) ->
         @db.get docId
 
-    find: (pattern = {}, subset = {}) ->
+    find: (criteria = {}, subset = {}) ->
         docs = @db.getAll (do @_getDocumentsIds)
-        @_subset subset, doc for doc in docs when @_matchPattern pattern, doc
+        @_subset subset, doc for doc in docs when @_matchCriteria criteria, doc
 
-    remove: (pattern = {}) ->
-        @db.remove docId for docId in (do @_getDocumentsIds) when @_matchPattern pattern, (@db.get docId)
+    remove: (criteria = {}) ->
+        @db.remove docId for docId in (do @_getDocumentsIds) when @_matchCriteria criteria, (@db.get docId)
 
-    _matchPattern: (pattern, doc) ->
-        for field, clause of pattern
-            if not @_matchClause doc, field, clause
-                return false
-        return true
-
-    _matchClause: (doc, field, clause) ->
-        value = doc[field]
-        switch typeof clause
-            when "number", "string", "boolean"
-                if value instanceof Array
-                    return clause in value
-                else
-                    return value == clause
+    _matchCriteria: (criteria, doc) ->
+        switch typeof criteria
+            when "object"
+                for field, condition of criteria
+                    if not @_matchCondition doc, field, condition
+                        return false
+                return true
+            when "function"
+                return not not criteria doc # convert to boolean
             else
                 return true
 
+    _matchCondition: (doc, field, condition) ->
+        value = doc[field]
+        switch typeof condition
+            when "number", "string", "boolean"
+                if value instanceof Array
+                    return condition in value
+                else
+                    return value == condition
+            when "object"
+                for operator, operand of condition
+                    if not @_matchOperator value, operator, operand
+                        return false
+                return true
+            when "function"
+                return not not condition value # convert to boolean
+            else
+                return true
+
+    _matchOperator: (value, operator, operand) ->
+        switch operator
+            when "$ne"  then value != operand
+            when "$gt"  then value >  operand
+            when "$gte" then value >= operand
+            when "$lt"  then value <  operand
+            when "$lte" then value <= operand
+            when "$exists" then operand == (value != undefined)
+            when "$in"  then value in operand
+            when "$nin" then value not in operand
+            when "$size" then (value instanceof Array) && (value.length == operand)
+            else true
+
     _subset: (subset, doc) ->
-        #if subset == {} then return doc
-        doc
+        doc # TODO
     
     _getDocumentsIds: ->
         ids = do @db._getDocumentsIds
