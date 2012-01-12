@@ -50,11 +50,8 @@ class DB
         @storage.removeItem key
 
     _getCollectionsMetainfo: ->
-        metainfo = @_retrieve collectionsMetainfoKey
-        if metainfo != "undefined"
-            serializer.deserialize metainfo
-        else
-            {}
+        metainfo = (@_retrieve collectionsMetainfoKey) ? "{}"
+        return serializer.deserialize metainfo
 
     _updateCollectionsMetainfo: (name, cid) ->
         metainfo = do @_getCollectionsMetainfo

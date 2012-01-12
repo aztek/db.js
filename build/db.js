@@ -94,13 +94,9 @@ db.js v0.1.0
     };
 
     DB.prototype._getCollectionsMetainfo = function() {
-      var metainfo;
-      metainfo = this._retrieve(collectionsMetainfoKey);
-      if (metainfo !== "undefined") {
-        return serializer.deserialize(metainfo);
-      } else {
-        return {};
-      }
+      var metainfo, _ref;
+      metainfo = (_ref = this._retrieve(collectionsMetainfoKey)) != null ? _ref : "{}";
+      return serializer.deserialize(metainfo);
     };
 
     DB.prototype._updateCollectionsMetainfo = function(name, cid) {
