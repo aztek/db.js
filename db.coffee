@@ -1,16 +1,11 @@
 ###
 db.js v0.1.0
 ###
-class Serializer
-    serialize: (object) ->
-        JSON.stringify object
-    
-    deserialize: (string) ->
-        JSON.parse string
-
 class DB
     collectionsMetainfoKey = "_dbjs_collections"
-    serializer = new Serializer
+    serializer =
+        serialize:   (object) -> JSON.stringify object
+        deserialize: (string) -> JSON.parse string
 
     constructor: (@storage) ->
 
