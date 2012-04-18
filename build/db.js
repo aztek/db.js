@@ -4,8 +4,36 @@ db.js v0.1.0
 */
 
 (function() {
-  var Collection, DB,
+  var Collection, DB, IdDistributor,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  IdDistributor = (function() {
+
+    function IdDistributor() {
+      this.generateBlock = function() {
+        return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
+      };
+    }
+
+    IdDistributor.prototype.generateCollectionId = function() {
+      return this.generateBlock();
+    };
+
+    IdDistributor.prototype.generateDocumentId = function() {
+      var i;
+      return ((function() {
+        var _results;
+        _results = [];
+        for (i = 1; i <= 3; i++) {
+          _results.push(this.generateBlock());
+        }
+        return _results;
+      }).call(this)).join('');
+    };
+
+    return IdDistributor;
+
+  })();
 
   DB = (function() {
 
@@ -59,7 +87,7 @@ db.js v0.1.0
       if (name in collections) {
         cid = collections[name];
       } else {
-        cid = this._generateCollectionId();
+        cid = (new IdDistributor).generateCollectionId();
         this.collections.update(name, cid);
       }
       return new Collection(this, name, cid);
@@ -95,48 +123,6 @@ db.js v0.1.0
         _results.push(this.remove(fullId));
       }
       return _results;
-    };
-
-    DB.prototype._generateIdBlock = function() {
-      return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
-    };
-
-    DB.prototype._generateCollectionId = function() {
-      return this._generateIdBlock();
-    };
-
-    DB.prototype._generateFullId = function(cid) {
-      var i;
-      return cid + (((function() {
-        var _results;
-        _results = [];
-        for (i = 1; i <= 3; i++) {
-          _results.push(this._generateIdBlock());
-        }
-        return _results;
-      }).call(this)).join(''));
-    };
-
-    DB.prototype._getDocumentsIds = function() {
-      var docId, ids, keyId, _i, _len, _results;
-      ids = (function() {
-        var _ref, _results;
-        _results = [];
-        for (keyId = 0, _ref = this._storage.length; 0 <= _ref ? keyId < _ref : keyId > _ref; 0 <= _ref ? keyId++ : keyId--) {
-          _results.push(this._storage.key(keyId));
-        }
-        return _results;
-      }).call(this);
-      _results = [];
-      for (_i = 0, _len = ids.length; _i < _len; _i++) {
-        docId = ids[_i];
-        if (this._validDocumentId(docId)) _results.push(docId);
-      }
-      return _results;
-    };
-
-    DB.prototype._validDocumentId = function(docId) {
-      return (new RegExp("^[0-9a-f]{16}$")).test(docId);
     };
 
     return DB;
@@ -195,7 +181,7 @@ db.js v0.1.0
       if ("_id" in document) {
         return document._id;
       } else {
-        return this.db._generateFullId(this.cid);
+        return (new IdDistributor).generateDocumentId(this.cid);
       }
     };
 
