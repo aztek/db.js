@@ -17,7 +17,11 @@ db.js v0.1.0
           return JSON.stringify(object);
         },
         deserialize: function(string) {
-          return JSON.parse(string);
+          if (string != null) {
+            return JSON.parse(string);
+          } else {
+            return null;
+          }
         }
       };
       this.storage = {
@@ -25,7 +29,7 @@ db.js v0.1.0
           return _this._storage.setItem(key, _this.serializer.serialize(value));
         },
         retrieve: function(key) {
-          return _this._storage.getItem(key);
+          return _this.serializer.deserialize(_this._storage.getItem(key));
         },
         remove: function(key) {
           return _this._storage.removeItem(key);
@@ -35,7 +39,7 @@ db.js v0.1.0
         key: "_dbjs_collections",
         get: function() {
           var _ref;
-          return _this.serializer.deserialize((_ref = _this.storage.retrieve(_this.collections.key)) != null ? _ref : "{}");
+          return (_ref = _this.storage.retrieve(_this.collections.key)) != null ? _ref : {};
         },
         save: function(collections) {
           return _this.storage.store(_this.collections.key, collections);
@@ -66,7 +70,7 @@ db.js v0.1.0
     };
 
     DB.prototype.get = function(docId) {
-      return this.serializer.deserialize(this.storage.retrieve(docId));
+      return this.storage.retrieve(docId);
     };
 
     DB.prototype.getAll = function(docIds) {
@@ -88,7 +92,7 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = docIds.length; _i < _len; _i++) {
         docId = docIds[_i];
-        _results.push(this.storage.remove(docId));
+        _results.push(this.remove(docId));
       }
       return _results;
     };

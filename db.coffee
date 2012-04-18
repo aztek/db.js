@@ -5,16 +5,16 @@ class DB
   constructor: (@_storage) ->
     @serializer =
       serialize:   (object) -> JSON.stringify object
-      deserialize: (string) -> JSON.parse string
+      deserialize: (string) -> if string? then JSON.parse string else null
 
     @storage =
       store: (key, value) => @_storage.setItem(key, @serializer.serialize value)
-      retrieve: (key) => @_storage.getItem key
+      retrieve: (key) => @serializer.deserialize(@_storage.getItem key)
       remove: (key) => @_storage.removeItem key
 
     @collections =
       key: "_dbjs_collections"
-      get: => @serializer.deserialize((@storage.retrieve @collections.key) ? "{}")
+      get: => (@storage.retrieve @collections.key) ? {}
       save: (collections) => @storage.store(@collections.key, collections)
       update: (name, cid) =>
         collections = @collections.get()
@@ -32,19 +32,11 @@ class DB
 
   getCollections: -> Object.keys @collections.get()
 
-  get: (docId) ->
-    @serializer.deserialize(@storage.retrieve docId)
+  get: (docId) -> @storage.retrieve docId
+  getAll: (docIds) -> @get docId for docId in docIds
 
-  getAll: (docIds) ->
-    @get docId for docId in docIds
-
-#  set: ()
-
-  remove: (docId) ->
-    @storage.remove docId
-
-  removeAll: (docIds) ->
-    @storage.remove docId for docId in docIds
+  remove: (docId) -> @storage.remove docId
+  removeAll: (docIds) -> @remove docId for docId in docIds
 
   _generateIdBlock: ->
     # generate random 4 character hex string
