@@ -38,24 +38,19 @@ class DB
   remove: (docId) -> @storage.remove docId
   removeAll: (docIds) -> @remove docId for docId in docIds
 
-  _generateIdBlock: ->
-    # generate random 4 character hex string
-    # http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-    block = Math.floor((Math.random() + 1) * 0x10000)
-    (block.toString 16).substring 1
+  # generate random 4 character hex string
+  # http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+  _generateIdBlock: -> Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1)
 
-  _generateCollectionId: ->
-    @_generateIdBlock()
+  _generateCollectionId: -> @_generateIdBlock()
 
-  _generateDocumentId: (cid) ->
-    cid + ((@_generateIdBlock() for i in [1..3]).join '')
+  _generateDocumentId: (cid) -> cid + ((@_generateIdBlock() for i in [1..3]).join '')
 
   _getDocumentsIds: ->
     ids = (@_storage.key keyId for keyId in [0...@_storage.length])
     docId for docId in ids when @_validDocumentId docId
 
-  _validDocumentId: (docId) ->
-    (new RegExp "^[0-9a-f]{16}$").test docId
+  _validDocumentId: (docId) -> (new RegExp "^[0-9a-f]{16}$").test docId
 
 class Collection
   constructor: (@db, @name, @cid) ->
@@ -65,15 +60,14 @@ class Collection
     @db.storage.store(docId, document)
     docId
 
-  get: (docId) ->
-    @db.get docId
+  get: (docId) -> @db.get docId
 
   find: (criteria = {}, subset = {}) ->
     docs = @db.getAll @_getDocumentsIds()
     @_subset(subset, doc) for doc in docs when @_matchCriteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    @db.remove docId for docId in @_getDocumentsIds() when @_matchCriteria(criteria, @db.get docId)
+    @db.remove docId for docId in @_getDocumentsIds() when @matches.criteria(criteria, @db.get docId)
 
   _resolveDocumentId: (document) ->
     if "_id" of document

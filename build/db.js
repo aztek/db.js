@@ -98,9 +98,7 @@ db.js v0.1.0
     };
 
     DB.prototype._generateIdBlock = function() {
-      var block;
-      block = Math.floor((Math.random() + 1) * 0x10000);
-      return (block.toString(16)).substring(1);
+      return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
     };
 
     DB.prototype._generateCollectionId = function() {
