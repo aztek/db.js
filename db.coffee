@@ -32,11 +32,11 @@ class DB
 
   getCollections: -> Object.keys @collections.get()
 
-  get: (docId) -> @storage.retrieve docId
-  getAll: (docIds) -> @get docId for docId in docIds
+  get: (fullId) -> @storage.retrieve fullId
+  getAll: (fullIds) -> @get fullId for fullId in fullIds
 
-  remove: (docId) -> @storage.remove docId
-  removeAll: (docIds) -> @remove docId for docId in docIds
+  remove: (fullId) -> @storage.remove fullId
+  removeAll: (fullIds) -> @remove fullId for fullId in fullIds
 
   # generate random 4 character hex string
   # http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -44,7 +44,7 @@ class DB
 
   _generateCollectionId: -> @_generateIdBlock()
 
-  _generateDocumentId: (cid) -> cid + ((@_generateIdBlock() for i in [1..3]).join '')
+  _generateFullId: (cid) -> cid + ((@_generateIdBlock() for i in [1..3]).join '')
 
   _getDocumentsIds: ->
     ids = (@_storage.key keyId for keyId in [0...@_storage.length])
@@ -60,7 +60,7 @@ class Collection
     @db.storage.store(docId, document)
     docId
 
-  get: (docId) -> @db.get docId
+  get: (docId) -> @db.get(@cid + docId)
 
   find: (criteria = {}, subset = {}) ->
     docs = @db.getAll @_getDocumentsIds()
@@ -73,7 +73,7 @@ class Collection
     if "_id" of document
       document._id
     else
-      @db._generateDocumentId @cid
+      @db._generateFullId @cid
 
   @matches =
     criteria: (criteria, doc) ->

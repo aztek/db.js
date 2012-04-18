@@ -69,30 +69,30 @@ db.js v0.1.0
       return Object.keys(this.collections.get());
     };
 
-    DB.prototype.get = function(docId) {
-      return this.storage.retrieve(docId);
+    DB.prototype.get = function(fullId) {
+      return this.storage.retrieve(fullId);
     };
 
-    DB.prototype.getAll = function(docIds) {
-      var docId, _i, _len, _results;
+    DB.prototype.getAll = function(fullIds) {
+      var fullId, _i, _len, _results;
       _results = [];
-      for (_i = 0, _len = docIds.length; _i < _len; _i++) {
-        docId = docIds[_i];
-        _results.push(this.get(docId));
+      for (_i = 0, _len = fullIds.length; _i < _len; _i++) {
+        fullId = fullIds[_i];
+        _results.push(this.get(fullId));
       }
       return _results;
     };
 
-    DB.prototype.remove = function(docId) {
-      return this.storage.remove(docId);
+    DB.prototype.remove = function(fullId) {
+      return this.storage.remove(fullId);
     };
 
-    DB.prototype.removeAll = function(docIds) {
-      var docId, _i, _len, _results;
+    DB.prototype.removeAll = function(fullIds) {
+      var fullId, _i, _len, _results;
       _results = [];
-      for (_i = 0, _len = docIds.length; _i < _len; _i++) {
-        docId = docIds[_i];
-        _results.push(this.remove(docId));
+      for (_i = 0, _len = fullIds.length; _i < _len; _i++) {
+        fullId = fullIds[_i];
+        _results.push(this.remove(fullId));
       }
       return _results;
     };
@@ -105,7 +105,7 @@ db.js v0.1.0
       return this._generateIdBlock();
     };
 
-    DB.prototype._generateDocumentId = function(cid) {
+    DB.prototype._generateFullId = function(cid) {
       var i;
       return cid + (((function() {
         var _results;
@@ -159,7 +159,7 @@ db.js v0.1.0
     };
 
     Collection.prototype.get = function(docId) {
-      return this.db.get(docId);
+      return this.db.get(this.cid + docId);
     };
 
     Collection.prototype.find = function(criteria, subset) {
@@ -184,7 +184,7 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docId = _ref[_i];
-        if (this._matchCriteria(criteria, this.db.get(docId))) {
+        if (this.matches.criteria(criteria, this.db.get(docId))) {
           _results.push(this.db.remove(docId));
         }
       }
@@ -195,7 +195,7 @@ db.js v0.1.0
       if ("_id" in document) {
         return document._id;
       } else {
-        return this.db._generateDocumentId(this.cid);
+        return this.db._generateFullId(this.cid);
       }
     };
 
