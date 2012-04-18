@@ -4,56 +4,69 @@ db.js v0.1.0
 */
 
 (function() {
-  var Collection, DB, Serializer,
+  var Collection, DB,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  Serializer = (function() {
-
-    function Serializer() {}
-
-    Serializer.prototype.serialize = function(object) {
-      return JSON.stringify(object);
-    };
-
-    Serializer.prototype.deserialize = function(string) {
-      return JSON.parse(string);
-    };
-
-    return Serializer;
-
-  })();
-
   DB = (function() {
-    var collectionsMetainfoKey, serializer;
 
-    collectionsMetainfoKey = "_dbjs_collections";
-
-    serializer = new Serializer;
-
-    function DB(storage) {
-      this.storage = storage;
+    function DB(_storage) {
+      var _this = this;
+      this._storage = _storage;
+      this.serializer = {
+        serialize: function(object) {
+          return JSON.stringify(object);
+        },
+        deserialize: function(string) {
+          return JSON.parse(string);
+        }
+      };
+      this.storage = {
+        store: function(key, value) {
+          return _this._storage.setItem(key, _this.serializer.serialize(value));
+        },
+        retrieve: function(key) {
+          return _this._storage.getItem(key);
+        },
+        remove: function(key) {
+          return _this._storage.removeItem(key);
+        }
+      };
+      this.collections = {
+        key: "_dbjs_collections",
+        get: function() {
+          var _ref;
+          return _this.serializer.deserialize((_ref = _this.storage.retrieve(_this.collections.key)) != null ? _ref : "{}");
+        },
+        save: function(collections) {
+          return _this.storage.store(_this.collections.key, collections);
+        },
+        update: function(name, cid) {
+          var collections;
+          collections = _this.collections.get();
+          collections[name] = cid;
+          return _this.collections.save(collections);
+        }
+      };
     }
 
     DB.prototype.collection = function(name) {
-      var cid, metainfo;
-      metainfo = this._getCollectionsMetainfo();
-      if (name in metainfo) {
-        cid = metainfo[name];
+      var cid, collections;
+      collections = this.collections.get();
+      if (name in collections) {
+        cid = collections[name];
       } else {
         cid = this._generateCollectionId();
-        this._updateCollectionsMetainfo(name, cid);
+        this.collections.update(name, cid);
       }
       return new Collection(this, name, cid);
     };
 
-    DB.prototype.collections = function() {
-      var metainfo;
-      metainfo = this._getCollectionsMetainfo();
-      return Object.keys(metainfo);
+    DB.prototype.getCollections = function() {
+      return Object.keys(this.collections.get());
     };
 
     DB.prototype.get = function(docId) {
-      return serializer.deserialize(this._retrieve(docId));
+      return this.serializer.deserialize(this.storage.retrieve(docId));
     };
 
     DB.prototype.getAll = function(docIds) {
@@ -67,8 +80,7 @@ db.js v0.1.0
     };
 
     DB.prototype.remove = function(docId) {
-      this._delete(docId);
-      return docId;
+      return this.storage.remove(docId);
     };
 
     DB.prototype.removeAll = function(docIds) {
@@ -76,39 +88,14 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = docIds.length; _i < _len; _i++) {
         docId = docIds[_i];
-        _results.push(this._delete(docId));
+        _results.push(this.storage.remove(docId));
       }
       return _results;
     };
 
-    DB.prototype._store = function(key, value) {
-      return this.storage.setItem(key, serializer.serialize(value));
-    };
-
-    DB.prototype._retrieve = function(key) {
-      return this.storage.getItem(key);
-    };
-
-    DB.prototype._delete = function(key) {
-      return this.storage.removeItem(key);
-    };
-
-    DB.prototype._getCollectionsMetainfo = function() {
-      var metainfo, _ref;
-      metainfo = (_ref = this._retrieve(collectionsMetainfoKey)) != null ? _ref : "{}";
-      return serializer.deserialize(metainfo);
-    };
-
-    DB.prototype._updateCollectionsMetainfo = function(name, cid) {
-      var metainfo;
-      metainfo = this._getCollectionsMetainfo();
-      metainfo[name] = cid;
-      return this._store(collectionsMetainfoKey, metainfo);
-    };
-
     DB.prototype._generateIdBlock = function() {
       var block;
-      block = Math.floor((1 + Math.random()) * 0x10000);
+      block = Math.floor((Math.random() + 1) * 0x10000);
       return (block.toString(16)).substring(1);
     };
 
@@ -133,8 +120,8 @@ db.js v0.1.0
       ids = (function() {
         var _ref, _results;
         _results = [];
-        for (keyId = 0, _ref = this.storage.length; 0 <= _ref ? keyId < _ref : keyId > _ref; 0 <= _ref ? keyId++ : keyId--) {
-          _results.push(this.storage.key(keyId));
+        for (keyId = 0, _ref = this._storage.length; 0 <= _ref ? keyId < _ref : keyId > _ref; 0 <= _ref ? keyId++ : keyId--) {
+          _results.push(this._storage.key(keyId));
         }
         return _results;
       }).call(this);
@@ -164,8 +151,8 @@ db.js v0.1.0
 
     Collection.prototype.insert = function(document) {
       var docId;
-      docId = this.db._generateDocumentId(this.cid);
-      this.db._store(docId, document);
+      docId = this._resolveDocumentId(document);
+      this.db.storage.store(docId, document);
       return docId;
     };
 
@@ -202,70 +189,94 @@ db.js v0.1.0
       return _results;
     };
 
-    Collection.prototype._matchCriteria = function(criteria, doc) {
-      var condition, field;
-      switch (typeof criteria) {
-        case "object":
-          for (field in criteria) {
-            condition = criteria[field];
-            if (!this._matchCondition(doc, field, condition)) return false;
-          }
-          return true;
-        case "function":
-          return !!criteria(doc);
-        default:
-          return true;
+    Collection.prototype._resolveDocumentId = function(document) {
+      if ("_id" in document) {
+        return document._id;
+      } else {
+        return this.db._generateDocumentId(this.cid);
       }
     };
 
-    Collection.prototype._matchCondition = function(doc, field, condition) {
-      var operand, operator, value;
-      value = doc[field];
-      switch (typeof condition) {
-        case "number":
-        case "string":
-        case "boolean":
-          if (value instanceof Array) {
-            return __indexOf.call(value, condition) >= 0;
-          } else {
-            return value === condition;
-          }
-          break;
-        case "object":
-          for (operator in condition) {
-            operand = condition[operator];
-            if (!this._matchOperator(value, operator, operand)) return false;
-          }
-          return true;
-        case "function":
-          return !!condition(value);
-        default:
-          return true;
-      }
-    };
-
-    Collection.prototype._matchOperator = function(value, operator, operand) {
-      switch (operator) {
-        case "$ne":
-          return value !== operand;
-        case "$gt":
-          return value > operand;
-        case "$gte":
-          return value >= operand;
-        case "$lt":
-          return value < operand;
-        case "$lte":
-          return value <= operand;
-        case "$exists":
-          return operand === (value !== void 0);
-        case "$in":
-          return __indexOf.call(operand, value) >= 0;
-        case "$nin":
-          return __indexOf.call(operand, value) < 0;
-        case "$size":
-          return (value instanceof Array) && (value.length === operand);
-        default:
-          return true;
+    Collection.matches = {
+      criteria: function(criteria, doc) {
+        var condition, field, _results;
+        switch (typeof criteria) {
+          case "object":
+            _results = [];
+            for (field in criteria) {
+              condition = criteria[field];
+              if (!this.matches.condition(doc, field, condition)) false;
+              _results.push(true);
+            }
+            return _results;
+            break;
+          case "function":
+            return !!criteria(doc);
+          default:
+            return true;
+        }
+      },
+      condition: function(doc, field, condition) {
+        var operand, operator, value;
+        value = doc[field];
+        switch (typeof condition) {
+          case "number":
+          case "string":
+          case "boolean":
+            if (value instanceof Array) {
+              return __indexOf.call(value, condition) >= 0;
+            } else {
+              return value === condition;
+            }
+            break;
+          case "object":
+            for (operator in condition) {
+              operand = condition[operator];
+              if (!this.matches.operator(value, operator, operand)) false;
+            }
+            return true;
+          case "function":
+            return !!condition(value);
+          default:
+            return true;
+        }
+      },
+      operator: function(value, operator, operand) {
+        var elem;
+        switch (operator) {
+          case "$ne":
+            return value !== operand;
+          case "$gt":
+            return value > operand;
+          case "$gte":
+            return value >= operand;
+          case "$lt":
+            return value < operand;
+          case "$lte":
+            return value <= operand;
+          case "$exists":
+            return operand === (value !== void 0);
+          case "$in":
+            return __indexOf.call(operand, value) >= 0;
+          case "$nin":
+            return __indexOf.call(operand, value) < 0;
+          case "$all":
+            return (value instanceof Array) && (((function() {
+              var _i, _len, _results;
+              if (__indexOf.call(operand, elem) < 0) {
+                _results = [];
+                for (_i = 0, _len = value.length; _i < _len; _i++) {
+                  elem = value[_i];
+                  _results.push(elem);
+                }
+                return _results;
+              }
+            })()).length === 0);
+          case "$size":
+            return (value instanceof Array) && (value.length === operand);
+          default:
+            return true;
+        }
       }
     };
 
