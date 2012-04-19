@@ -37,36 +37,30 @@ class DB
     else
       cid = (new IdDistributor).generateCollectionId()
       @collections.update(name, cid)
-    new Collection(this, name, cid)
+    new Collection(@storage, name, cid)
 
   getCollections: -> Object.keys @collections.get()
 
-  get: (fullId) -> @storage.retrieve fullId
-  getAll: (fullIds) -> @get fullId for fullId in fullIds
-
-  remove: (fullId) -> @storage.remove fullId
-  removeAll: (fullIds) -> @remove fullId for fullId in fullIds
-
 class Collection
-  constructor: (@db, @name, @cid) ->
+  constructor: (@storage, @name, @cid) ->
 
   insert: (document) ->
     docId = @_resolveDocumentId document
-    @db.storage.store(docId, document)
+    @storage.store(docId, document)
     docId
 
-  get: (docId) -> @db.get(@cid + docId)
+  get: (docId) -> @storage.retrieve(@cid + docId)
 
   find: (criteria = {}, subset = {}) ->
-    docs = @db.getAll @_getDocumentsIds()
-    @_subset(subset, doc) for doc in docs when @_matchCriteria(criteria, doc)
+    docs = @get fullId for fullId in @_getDocumentsIds()
+    @_subset(subset, doc) for docId in docs when @_matchCriteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    @db.remove docId for docId in @_getDocumentsIds() when @matches.criteria(criteria, @db.get docId)
+    @storage.remove docId for docId in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
 
-  _resolveDocumentId: (document) ->
-    if "_id" of document
-      document._id
+  _resolveDocumentId: (doc) ->
+    if typeof doc._id != "undefined"
+      doc._id
     else
       (new IdDistributor).generateDocumentId @cid
 
@@ -117,13 +111,6 @@ class Collection
 
   _subset: (subset, doc) ->
     doc # TODO
-
-  _getDocumentsIds: ->
-    ids = @db._getDocumentsIds()
-    docId for docId in ids when @_collectionDocument docId
-
-  _collectionDocument: (docId) ->
-    docId[0...4] == @cid
 
 if @localStorage
   @db = new DB @localStorage

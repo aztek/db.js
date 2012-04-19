@@ -90,39 +90,11 @@ db.js v0.1.0
         cid = (new IdDistributor).generateCollectionId();
         this.collections.update(name, cid);
       }
-      return new Collection(this, name, cid);
+      return new Collection(this.storage, name, cid);
     };
 
     DB.prototype.getCollections = function() {
       return Object.keys(this.collections.get());
-    };
-
-    DB.prototype.get = function(fullId) {
-      return this.storage.retrieve(fullId);
-    };
-
-    DB.prototype.getAll = function(fullIds) {
-      var fullId, _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = fullIds.length; _i < _len; _i++) {
-        fullId = fullIds[_i];
-        _results.push(this.get(fullId));
-      }
-      return _results;
-    };
-
-    DB.prototype.remove = function(fullId) {
-      return this.storage.remove(fullId);
-    };
-
-    DB.prototype.removeAll = function(fullIds) {
-      var fullId, _i, _len, _results;
-      _results = [];
-      for (_i = 0, _len = fullIds.length; _i < _len; _i++) {
-        fullId = fullIds[_i];
-        _results.push(this.remove(fullId));
-      }
-      return _results;
     };
 
     return DB;
@@ -131,8 +103,8 @@ db.js v0.1.0
 
   Collection = (function() {
 
-    function Collection(db, name, cid) {
-      this.db = db;
+    function Collection(storage, name, cid) {
+      this.storage = storage;
       this.name = name;
       this.cid = cid;
     }
@@ -140,22 +112,26 @@ db.js v0.1.0
     Collection.prototype.insert = function(document) {
       var docId;
       docId = this._resolveDocumentId(document);
-      this.db.storage.store(docId, document);
+      this.storage.store(docId, document);
       return docId;
     };
 
     Collection.prototype.get = function(docId) {
-      return this.db.get(this.cid + docId);
+      return this.storage.retrieve(this.cid + docId);
     };
 
     Collection.prototype.find = function(criteria, subset) {
-      var doc, docs, _i, _len, _results;
+      var docId, docs, fullId, _i, _j, _len, _len2, _ref, _results;
       if (criteria == null) criteria = {};
       if (subset == null) subset = {};
-      docs = this.db.getAll(this._getDocumentsIds());
+      _ref = this._getDocumentsIds();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        fullId = _ref[_i];
+        docs = this.get(fullId);
+      }
       _results = [];
-      for (_i = 0, _len = docs.length; _i < _len; _i++) {
-        doc = docs[_i];
+      for (_j = 0, _len2 = docs.length; _j < _len2; _j++) {
+        docId = docs[_j];
         if (this._matchCriteria(criteria, doc)) {
           _results.push(this._subset(subset, doc));
         }
@@ -170,16 +146,16 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docId = _ref[_i];
-        if (this.matches.criteria(criteria, this.db.get(docId))) {
-          _results.push(this.db.remove(docId));
+        if (this.matches.criteria(criteria, this.storage.retrieve(docId))) {
+          _results.push(this.storage.remove(docId));
         }
       }
       return _results;
     };
 
-    Collection.prototype._resolveDocumentId = function(document) {
-      if ("_id" in document) {
-        return document._id;
+    Collection.prototype._resolveDocumentId = function(doc) {
+      if (typeof doc._id !== "undefined") {
+        return doc._id;
       } else {
         return (new IdDistributor).generateDocumentId(this.cid);
       }
@@ -270,21 +246,6 @@ db.js v0.1.0
 
     Collection.prototype._subset = function(subset, doc) {
       return doc;
-    };
-
-    Collection.prototype._getDocumentsIds = function() {
-      var docId, ids, _i, _len, _results;
-      ids = this.db._getDocumentsIds();
-      _results = [];
-      for (_i = 0, _len = ids.length; _i < _len; _i++) {
-        docId = ids[_i];
-        if (this._collectionDocument(docId)) _results.push(docId);
-      }
-      return _results;
-    };
-
-    Collection.prototype._collectionDocument = function(docId) {
-      return docId.slice(0, 4) === this.cid;
     };
 
     return Collection;

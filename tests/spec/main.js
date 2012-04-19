@@ -17,7 +17,7 @@ describe("db.js", function () {
         var doc = {a: 10, b: "foo", c: {d: false, e: [null, {}]}};
         var collection = db.collection("something");
         var key = collection.insert(doc);
-        expect(db.get(key)).toEqual(doc);
+        expect(collection.get(key)).toEqual(doc);
     });
 
     it("should insert documents with correctly set ids", function () {
@@ -25,6 +25,6 @@ describe("db.js", function () {
         var collection = db.collection("something");
         var key = collection.insert(doc);
         expect(key).toEqual(10);
-        expect(db.get(key)).toEqual(doc);
+        expect(collection.get(key)).toEqual(doc);
     });
 });
