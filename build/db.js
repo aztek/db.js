@@ -4,36 +4,8 @@ db.js v0.1.0
 */
 
 (function() {
-  var Collection, DB, IdDistributor,
+  var Collection, DB,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-  IdDistributor = (function() {
-
-    function IdDistributor() {
-      this.generateBlock = function() {
-        return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
-      };
-    }
-
-    IdDistributor.prototype.generateCollectionId = function() {
-      return this.generateBlock();
-    };
-
-    IdDistributor.prototype.generateDocumentId = function() {
-      var i;
-      return ((function() {
-        var _results;
-        _results = [];
-        for (i = 1; i <= 3; i++) {
-          _results.push(this.generateBlock());
-        }
-        return _results;
-      }).call(this)).join('');
-    };
-
-    return IdDistributor;
-
-  })();
 
   DB = (function() {
 
@@ -63,38 +35,11 @@ db.js v0.1.0
           return _this._storage.removeItem(key);
         }
       };
-      this.collections = {
-        key: "_dbjs_collections",
-        get: function() {
-          var _ref;
-          return (_ref = _this.storage.retrieve(_this.collections.key)) != null ? _ref : {};
-        },
-        save: function(collections) {
-          return _this.storage.store(_this.collections.key, collections);
-        },
-        update: function(name, cid) {
-          var collections;
-          collections = _this.collections.get();
-          collections[name] = cid;
-          return _this.collections.save(collections);
-        }
-      };
     }
 
     DB.prototype.collection = function(name) {
-      var cid, collections;
-      collections = this.collections.get();
-      if (name in collections) {
-        cid = collections[name];
-      } else {
-        cid = (new IdDistributor).generateCollectionId();
-        this.collections.update(name, cid);
-      }
-      return new Collection(this.storage, name, cid);
-    };
-
-    DB.prototype.getCollections = function() {
-      return Object.keys(this.collections.get());
+      if (name.indexOf(":") >= 0) throw "Invalid collection name!";
+      return new Collection(name, this.storage);
     };
 
     return DB;
@@ -103,21 +48,20 @@ db.js v0.1.0
 
   Collection = (function() {
 
-    function Collection(storage, name, cid) {
-      this.storage = storage;
+    function Collection(name, storage) {
       this.name = name;
-      this.cid = cid;
+      this.storage = storage;
     }
 
     Collection.prototype.insert = function(document) {
       var docId;
       docId = this._resolveDocumentId(document);
-      this.storage.store(docId, document);
+      this.storage.store(this.name + ":" + docId, document);
       return docId;
     };
 
     Collection.prototype.get = function(docId) {
-      return this.storage.retrieve(this.cid + docId);
+      return this.storage.retrieve(this.name + ":" + docId);
     };
 
     Collection.prototype.find = function(criteria, subset) {
@@ -157,7 +101,7 @@ db.js v0.1.0
       if (typeof doc._id !== "undefined") {
         return doc._id;
       } else {
-        return (new IdDistributor).generateDocumentId(this.cid);
+        return this._generateDocumentId();
       }
     };
 
@@ -242,6 +186,22 @@ db.js v0.1.0
             return true;
         }
       }
+    };
+
+    Collection.prototype._generateBlock = function() {
+      return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
+    };
+
+    Collection.prototype._generateDocumentId = function() {
+      var i;
+      return ((function() {
+        var _results;
+        _results = [];
+        for (i = 1; i <= 3; i++) {
+          _results.push(this._generateBlock());
+        }
+        return _results;
+      }).call(this)).join('');
     };
 
     Collection.prototype._subset = function(subset, doc) {
