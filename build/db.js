@@ -9,8 +9,24 @@ db.js v0.1.0
 
   DB = (function() {
 
-    function DB(_storage) {
+    function DB(storage) {
+      this.storage = storage;
+    }
+
+    DB.prototype.collection = function(name) {
+      if (name.indexOf(":") >= 0) throw "Invalid collection name!";
+      return new Collection(name, this.storage);
+    };
+
+    return DB;
+
+  })();
+
+  Collection = (function() {
+
+    function Collection(name, _storage) {
       var _this = this;
+      this.name = name;
       this._storage = _storage;
       this.serializer = {
         serialize: function(object) {
@@ -35,22 +51,6 @@ db.js v0.1.0
           return _this._storage.removeItem(key);
         }
       };
-    }
-
-    DB.prototype.collection = function(name) {
-      if (name.indexOf(":") >= 0) throw "Invalid collection name!";
-      return new Collection(name, this.storage);
-    };
-
-    return DB;
-
-  })();
-
-  Collection = (function() {
-
-    function Collection(name, storage) {
-      this.name = name;
-      this.storage = storage;
     }
 
     Collection.prototype.insert = function(document) {
@@ -91,7 +91,7 @@ db.js v0.1.0
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docId = _ref[_i];
         if (this.matches.criteria(criteria, this.storage.retrieve(docId))) {
-          _results.push(this.storage.remove(docId));
+          _results.push(this.storage.remove(this.name + ":" + docId));
         }
       }
       return _results;

@@ -2,7 +2,15 @@
 db.js v0.1.0
 ###
 class DB
-  constructor: (@_storage) ->
+  constructor: (@storage) ->
+
+  collection: (name) ->
+    if name.indexOf(":") >= 0
+      throw "Invalid collection name!"
+    new Collection(name, @storage)
+
+class Collection
+  constructor: (@name, @_storage) ->
     @serializer =
       serialize:   (object) -> JSON.stringify object
       deserialize: (string) -> if string? then JSON.parse string else null
@@ -11,14 +19,6 @@ class DB
       store: (key, value) => @_storage.setItem(key, @serializer.serialize value)
       retrieve: (key) => @serializer.deserialize(@_storage.getItem key)
       remove: (key) => @_storage.removeItem key
-
-  collection: (name) ->
-    if name.indexOf(":") >= 0
-      throw "Invalid collection name!"
-    new Collection(name, @storage)
-
-class Collection
-  constructor: (@name, @storage) ->
 
   insert: (document) ->
     docId = @_resolveDocumentId document
@@ -32,7 +32,7 @@ class Collection
     @_subset(subset, doc) for docId in docs when @_matchCriteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    @storage.remove docId for docId in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
+    @storage.remove(@name + ":" + docId) for docId in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
 
   _resolveDocumentId: (doc) ->
     if typeof doc._id != "undefined"
