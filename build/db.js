@@ -38,40 +38,40 @@ db.js v0.1.0
         }
       };
       this.storage = {
-        store: function(key, value) {
-          return storage.setItem(key, _this.serializer.serialize(value));
+        store: function(docID, value) {
+          return storage.setItem(_this.name + ":" + docID, _this.serializer.serialize(value));
         },
-        retrieve: function(key) {
-          return _this.serializer.deserialize(storage.getItem(key));
+        retrieve: function(docID) {
+          return _this.serializer.deserialize(storage.getItem(_this.name + ":" + docID));
         },
-        remove: function(key) {
-          return storage.removeItem(key);
+        remove: function(docID) {
+          return storage.removeItem(_this.name + ":" + docID);
         },
-        exists: function(key) {
-          return storage.getItem(key) != null;
+        exists: function(docID) {
+          return storage.getItem(_this.name + ":" + docID) != null;
         }
       };
     }
 
     Collection.prototype.insert = function(document) {
-      var docId;
+      var docID;
       if (typeof document._id !== "undefined") {
-        if (!this.storage.exists(this.name + ":" + document._id)) {
-          docId = document._id;
+        if (!this.storage.exists(document._id)) {
+          docID = document._id;
         } else {
           throw "Duplicate document key " + document._id;
         }
       } else {
-        docId = this._generateDocumentId();
+        docID = this._generateDocumentId();
       }
-      this.storage.store(this.name + ":" + docId, document);
-      return docId;
+      this.storage.store(docID, document);
+      return docID;
     };
 
-    Collection.prototype.get = function(docId) {
+    Collection.prototype.get = function(docID) {
       var doc;
-      doc = this.storage.retrieve(this.name + ":" + docId);
-      doc._id = docId;
+      doc = this.storage.retrieve(docID);
+      doc._id = docID;
       return doc;
     };
 
@@ -95,14 +95,14 @@ db.js v0.1.0
     };
 
     Collection.prototype.remove = function(criteria) {
-      var docId, _i, _len, _ref, _results;
+      var docID, _i, _len, _ref, _results;
       if (criteria == null) criteria = {};
       _ref = this._getDocumentsIds();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        docId = _ref[_i];
+        docID = _ref[_i];
         if (this.matches.criteria(criteria, this.storage.retrieve(docId))) {
-          _results.push(this.storage.remove(this.name + ":" + docId));
+          _results.push(this.storage.remove(docID));
         }
       }
       return _results;

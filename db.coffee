@@ -15,25 +15,25 @@ class Collection
       deserialize: (string) -> if string? then JSON.parse string else null
 
     @storage =
-      store: (key, value) => storage.setItem(key, @serializer.serialize value)
-      retrieve: (key) => @serializer.deserialize(storage.getItem key)
-      remove: (key) => storage.removeItem key
-      exists: (key) => storage.getItem(key)?
+      store: (docID, value) => storage.setItem(@name + ":" + docID, @serializer.serialize value)
+      retrieve: (docID) => @serializer.deserialize(storage.getItem(@name + ":" + docID))
+      remove: (docID) => storage.removeItem(@name + ":" + docID)
+      exists: (docID) => storage.getItem(@name + ":" + docID)?
 
   insert: (document) ->
     if typeof document._id != "undefined"
-      if not @storage.exists(@name + ":" + document._id)
-        docId = document._id
+      if not @storage.exists document._id
+        docID = document._id
       else
         throw "Duplicate document key #{document._id}"
     else
-      docId = @_generateDocumentId()
-    @storage.store(@name + ":" + docId, document)
-    docId
+      docID = @_generateDocumentId()
+    @storage.store(docID, document)
+    docID
 
-  get: (docId) ->
-    doc = @storage.retrieve(@name + ":" + docId)
-    doc._id = docId # make sure _id attribute is set
+  get: (docID) ->
+    doc = @storage.retrieve(docID)
+    doc._id = docID # make sure _id attribute is set
     doc
 
   find: (criteria = {}, subset = {}) ->
@@ -41,7 +41,7 @@ class Collection
     @_subset(subset, doc) for docId in docs when @matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    @storage.remove(@name + ":" + docId) for docId in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
+    @storage.remove docID for docID in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
 
   @matches =
     criteria: (criteria, doc) ->
