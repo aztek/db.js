@@ -2,24 +2,23 @@
 db.js v0.1.0
 ###
 class DB
-  constructor: (@storage) ->
-
-  collection: (name) ->
-    if name.indexOf(":") >= 0
-      throw "Invalid collection name #{name}"
-    new Collection(name, @storage)
+  constructor: (storage) ->
+    @collection = (name) ->
+      if name.indexOf(":") >= 0
+        throw "Invalid collection name #{name}"
+      new Collection(name, storage)
 
 class Collection
-  constructor: (@name, @_storage) ->
+  constructor: (@name, storage) ->
     @serializer =
       serialize:   (object) -> JSON.stringify object
       deserialize: (string) -> if string? then JSON.parse string else null
 
     @storage =
-      store: (key, value) => @_storage.setItem(key, @serializer.serialize value)
-      retrieve: (key) => @serializer.deserialize(@_storage.getItem key)
-      remove: (key) => @_storage.removeItem key
-      exists: (key) => @_storage.getItem(key)?
+      store: (key, value) => storage.setItem(key, @serializer.serialize value)
+      retrieve: (key) => @serializer.deserialize(storage.getItem key)
+      remove: (key) => storage.removeItem key
+      exists: (key) => storage.getItem(key)?
 
   insert: (document) ->
     if typeof document._id != "undefined"

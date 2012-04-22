@@ -10,13 +10,11 @@ db.js v0.1.0
   DB = (function() {
 
     function DB(storage) {
-      this.storage = storage;
+      this.collection = function(name) {
+        if (name.indexOf(":") >= 0) throw "Invalid collection name " + name;
+        return new Collection(name, storage);
+      };
     }
-
-    DB.prototype.collection = function(name) {
-      if (name.indexOf(":") >= 0) throw "Invalid collection name " + name;
-      return new Collection(name, this.storage);
-    };
 
     return DB;
 
@@ -24,10 +22,9 @@ db.js v0.1.0
 
   Collection = (function() {
 
-    function Collection(name, _storage) {
+    function Collection(name, storage) {
       var _this = this;
       this.name = name;
-      this._storage = _storage;
       this.serializer = {
         serialize: function(object) {
           return JSON.stringify(object);
@@ -42,16 +39,16 @@ db.js v0.1.0
       };
       this.storage = {
         store: function(key, value) {
-          return _this._storage.setItem(key, _this.serializer.serialize(value));
+          return storage.setItem(key, _this.serializer.serialize(value));
         },
         retrieve: function(key) {
-          return _this.serializer.deserialize(_this._storage.getItem(key));
+          return _this.serializer.deserialize(storage.getItem(key));
         },
         remove: function(key) {
-          return _this._storage.removeItem(key);
+          return storage.removeItem(key);
         },
         exists: function(key) {
-          return _this._storage.getItem(key) != null;
+          return storage.getItem(key) != null;
         }
       };
     }
