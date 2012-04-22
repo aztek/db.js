@@ -6,7 +6,7 @@ class DB
 
   collection: (name) ->
     if name.indexOf(":") >= 0
-      throw "Invalid collection name!"
+      throw "Invalid collection name #{name}"
     new Collection(name, @storage)
 
 class Collection
@@ -19,26 +19,30 @@ class Collection
       store: (key, value) => @_storage.setItem(key, @serializer.serialize value)
       retrieve: (key) => @serializer.deserialize(@_storage.getItem key)
       remove: (key) => @_storage.removeItem key
+      exists: (key) => @_storage.getItem(key)?
 
   insert: (document) ->
-    docId = @_resolveDocumentId document
+    if typeof document._id != "undefined"
+      if not @storage.exists(@name + ":" + document._id)
+        docId = document._id
+      else
+        throw "Duplicate document key #{document._id}"
+    else
+      docId = @_generateDocumentId()
     @storage.store(@name + ":" + docId, document)
     docId
 
-  get: (docId) -> @storage.retrieve(@name + ":" + docId)
+  get: (docId) ->
+    doc = @storage.retrieve(@name + ":" + docId)
+    doc._id = docId # make sure _id attribute is set
+    doc
 
   find: (criteria = {}, subset = {}) ->
     docs = @get fullId for fullId in @_getDocumentsIds()
-    @_subset(subset, doc) for docId in docs when @_matchCriteria(criteria, doc)
+    @_subset(subset, doc) for docId in docs when @matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
     @storage.remove(@name + ":" + docId) for docId in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
-
-  _resolveDocumentId: (doc) ->
-    if typeof doc._id != "undefined"
-      doc._id
-    else
-      @_generateDocumentId()
 
   @matches =
     criteria: (criteria, doc) ->

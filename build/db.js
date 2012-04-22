@@ -14,7 +14,7 @@ db.js v0.1.0
     }
 
     DB.prototype.collection = function(name) {
-      if (name.indexOf(":") >= 0) throw "Invalid collection name!";
+      if (name.indexOf(":") >= 0) throw "Invalid collection name " + name;
       return new Collection(name, this.storage);
     };
 
@@ -49,19 +49,33 @@ db.js v0.1.0
         },
         remove: function(key) {
           return _this._storage.removeItem(key);
+        },
+        exists: function(key) {
+          return _this._storage.getItem(key) != null;
         }
       };
     }
 
     Collection.prototype.insert = function(document) {
       var docId;
-      docId = this._resolveDocumentId(document);
+      if (typeof document._id !== "undefined") {
+        if (!this.storage.exists(this.name + ":" + document._id)) {
+          docId = document._id;
+        } else {
+          throw "Duplicate document key " + document._id;
+        }
+      } else {
+        docId = this._generateDocumentId();
+      }
       this.storage.store(this.name + ":" + docId, document);
       return docId;
     };
 
     Collection.prototype.get = function(docId) {
-      return this.storage.retrieve(this.name + ":" + docId);
+      var doc;
+      doc = this.storage.retrieve(this.name + ":" + docId);
+      doc._id = docId;
+      return doc;
     };
 
     Collection.prototype.find = function(criteria, subset) {
@@ -76,7 +90,7 @@ db.js v0.1.0
       _results = [];
       for (_j = 0, _len2 = docs.length; _j < _len2; _j++) {
         docId = docs[_j];
-        if (this._matchCriteria(criteria, doc)) {
+        if (this.matches.criteria(criteria, doc)) {
           _results.push(this._subset(subset, doc));
         }
       }
@@ -95,14 +109,6 @@ db.js v0.1.0
         }
       }
       return _results;
-    };
-
-    Collection.prototype._resolveDocumentId = function(doc) {
-      if (typeof doc._id !== "undefined") {
-        return doc._id;
-      } else {
-        return this._generateDocumentId();
-      }
     };
 
     Collection.matches = {
