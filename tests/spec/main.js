@@ -30,4 +30,16 @@ describe("db.js", function () {
         collection.insert(doc);
         expect(function() { collection.insert(doc) }).toThrow("Duplicate document key 10");
     });
+
+    it("should find all inserted documents", function () {
+        var docs = [{_id: "foo"}, {_id: "bar"}, {_id: "baz"}];
+        var collection = db.collection("find_all");
+        docs.forEach(function (doc) {
+            collection.insert(doc);
+        });
+        var foundDocs = collection.find();
+        docs.forEach(function (doc) {
+            expect(foundDocs).toContain(doc);
+        });
+    });
 });

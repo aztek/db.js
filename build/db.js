@@ -49,6 +49,17 @@ db.js v0.1.0
         },
         exists: function(docID) {
           return storage.getItem(_this.name + ":" + docID) != null;
+        },
+        keys: function() {
+          var docID, _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = storage.length; _i < _len; _i++) {
+            docID = storage[_i];
+            if (_this.name + ":" === docID.slice(0, _this.name.length + 1 || 9e9)) {
+              _results.push(docID.slice(_this.name.length + 1));
+            }
+          }
+          return _results;
         }
       };
     }
@@ -76,17 +87,13 @@ db.js v0.1.0
     };
 
     Collection.prototype.find = function(criteria, subset) {
-      var docId, docs, fullId, _i, _j, _len, _len2, _ref, _results;
+      var doc, _i, _len, _ref, _results;
       if (criteria == null) criteria = {};
       if (subset == null) subset = {};
-      _ref = this._getDocumentsIds();
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        fullId = _ref[_i];
-        docs = this.get(fullId);
-      }
+      _ref = this.documents();
       _results = [];
-      for (_j = 0, _len2 = docs.length; _j < _len2; _j++) {
-        docId = docs[_j];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        doc = _ref[_i];
         if (this.matches.criteria(criteria, doc)) {
           _results.push(this._subset(subset, doc));
         }
@@ -108,7 +115,18 @@ db.js v0.1.0
       return _results;
     };
 
-    Collection.matches = {
+    Collection.prototype.documents = function() {
+      var docId, _i, _len, _ref, _results;
+      _ref = this.storage.keys();
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        docId = _ref[_i];
+        _results.push(this.get(docId));
+      }
+      return _results;
+    };
+
+    Collection.prototype.matches = {
       criteria: function(criteria, doc) {
         var condition, field, _results;
         switch (typeof criteria) {

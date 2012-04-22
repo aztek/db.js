@@ -19,6 +19,7 @@ class Collection
       retrieve: (docID) => @serializer.deserialize(storage.getItem(@name + ":" + docID))
       remove: (docID) => storage.removeItem(@name + ":" + docID)
       exists: (docID) => storage.getItem(@name + ":" + docID)?
+      keys: () => docID[@name.length + 1..] for docID in storage when @name + ":" == docID[..@name.length]
 
   insert: (document) ->
     if typeof document._id != "undefined"
@@ -37,13 +38,14 @@ class Collection
     doc
 
   find: (criteria = {}, subset = {}) ->
-    docs = @get fullId for fullId in @_getDocumentsIds()
-    @_subset(subset, doc) for docId in docs when @matches.criteria(criteria, doc)
+    @_subset(subset, doc) for doc in @documents() when @matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
     @storage.remove docID for docID in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
 
-  @matches =
+  documents: () -> @get docId for docId in @storage.keys()
+
+  matches:
     criteria: (criteria, doc) ->
       switch typeof criteria
         when "object"
