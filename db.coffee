@@ -9,20 +9,20 @@ class DB
       new Collection(name, storage)
 
 class Collection
-  constructor: (@name, storage) ->
-    @serializer =
+  constructor: (name, storage) ->
+    serializer =
       serialize:   (object) -> JSON.stringify object
       deserialize: (string) -> if string? then JSON.parse string else null
 
     @storage =
-      store: (docID, value) => storage.setItem(@name + ":" + docID, @serializer.serialize value)
-      retrieve: (docID) => @serializer.deserialize(storage.getItem(@name + ":" + docID))
-      remove: (docID) => storage.removeItem(@name + ":" + docID)
-      exists: (docID) => storage.getItem(@name + ":" + docID)?
-      keys: () => docID[@name.length + 1..] for docID in storage when @name + ":" == docID[..@name.length]
+      store: (docID, value) => storage.setItem(name + ":" + docID, serializer.serialize value)
+      retrieve: (docID) => serializer.deserialize(storage.getItem(name + ":" + docID))
+      remove: (docID) => storage.removeItem(name + ":" + docID)
+      exists: (docID) => storage.getItem(name + ":" + docID)?
+      keys: => docID[name.length + 1..] for docID in storage when name + ":" == docID[..name.length]
 
   insert: (document) ->
-    if typeof document._id != "undefined"
+    if document._id?
       if not @storage.exists document._id
         docID = document._id
       else
@@ -41,9 +41,9 @@ class Collection
     @_subset(subset, doc) for doc in @documents() when @matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    @storage.remove docID for docID in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docId)
+    @storage.remove docID for docID in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docID)
 
-  documents: () -> @get docId for docId in @storage.keys()
+  documents: -> @get docID for docID in @storage.keys()
 
   matches:
     criteria: (criteria, doc) ->
@@ -51,14 +51,15 @@ class Collection
         when "object"
           for field, condition of criteria
             if not @matches.condition(doc, field, condition)
-              false
-            true
+              return false
+          true
         when "function"
           not not criteria doc # convert to boolean
         else
           true
 
-    condition: (doc, field, condition) ->
+    condition: (doc, field, condition) =>
+      return false if field not in doc
       value = doc[field]
       switch typeof condition
         when "number", "string", "boolean"
@@ -69,7 +70,7 @@ class Collection
         when "object"
           for operator, operand of condition
             if not @matches.operator(value, operator, operand)
-              false
+              return false
           true
         when "function"
           not not condition value # convert to boolean

@@ -21,11 +21,12 @@ db.js v0.1.0
   })();
 
   Collection = (function() {
+    var _this = this;
 
     function Collection(name, storage) {
-      var _this = this;
-      this.name = name;
-      this.serializer = {
+      var serializer,
+        _this = this;
+      serializer = {
         serialize: function(object) {
           return JSON.stringify(object);
         },
@@ -39,24 +40,24 @@ db.js v0.1.0
       };
       this.storage = {
         store: function(docID, value) {
-          return storage.setItem(_this.name + ":" + docID, _this.serializer.serialize(value));
+          return storage.setItem(name + ":" + docID, serializer.serialize(value));
         },
         retrieve: function(docID) {
-          return _this.serializer.deserialize(storage.getItem(_this.name + ":" + docID));
+          return serializer.deserialize(storage.getItem(name + ":" + docID));
         },
         remove: function(docID) {
-          return storage.removeItem(_this.name + ":" + docID);
+          return storage.removeItem(name + ":" + docID);
         },
         exists: function(docID) {
-          return storage.getItem(_this.name + ":" + docID) != null;
+          return storage.getItem(name + ":" + docID) != null;
         },
         keys: function() {
           var docID, _i, _len, _results;
           _results = [];
           for (_i = 0, _len = storage.length; _i < _len; _i++) {
             docID = storage[_i];
-            if (_this.name + ":" === docID.slice(0, _this.name.length + 1 || 9e9)) {
-              _results.push(docID.slice(_this.name.length + 1));
+            if (name + ":" === docID.slice(0, name.length + 1 || 9e9)) {
+              _results.push(docID.slice(name.length + 1));
             }
           }
           return _results;
@@ -66,7 +67,7 @@ db.js v0.1.0
 
     Collection.prototype.insert = function(document) {
       var docID;
-      if (typeof document._id !== "undefined") {
+      if (document._id != null) {
         if (!this.storage.exists(document._id)) {
           docID = document._id;
         } else {
@@ -108,7 +109,7 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docID = _ref[_i];
-        if (this.matches.criteria(criteria, this.storage.retrieve(docId))) {
+        if (this.matches.criteria(criteria, this.storage.retrieve(docID))) {
           _results.push(this.storage.remove(docID));
         }
       }
@@ -116,29 +117,26 @@ db.js v0.1.0
     };
 
     Collection.prototype.documents = function() {
-      var docId, _i, _len, _ref, _results;
+      var docID, _i, _len, _ref, _results;
       _ref = this.storage.keys();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        docId = _ref[_i];
-        _results.push(this.get(docId));
+        docID = _ref[_i];
+        _results.push(this.get(docID));
       }
       return _results;
     };
 
     Collection.prototype.matches = {
       criteria: function(criteria, doc) {
-        var condition, field, _results;
+        var condition, field;
         switch (typeof criteria) {
           case "object":
-            _results = [];
             for (field in criteria) {
               condition = criteria[field];
-              if (!this.matches.condition(doc, field, condition)) false;
-              _results.push(true);
+              if (!this.matches.condition(doc, field, condition)) return false;
             }
-            return _results;
-            break;
+            return true;
           case "function":
             return !!criteria(doc);
           default:
@@ -147,6 +145,7 @@ db.js v0.1.0
       },
       condition: function(doc, field, condition) {
         var operand, operator, value;
+        if (__indexOf.call(doc, field) < 0) return false;
         value = doc[field];
         switch (typeof condition) {
           case "number":
@@ -161,7 +160,9 @@ db.js v0.1.0
           case "object":
             for (operator in condition) {
               operand = condition[operator];
-              if (!this.matches.operator(value, operator, operand)) false;
+              if (!Collection.matches.operator(value, operator, operand)) {
+                return false;
+              }
             }
             return true;
           case "function":
@@ -231,7 +232,7 @@ db.js v0.1.0
 
     return Collection;
 
-  })();
+  }).call(this);
 
   if (this.localStorage) {
     this.db = new DB(this.localStorage);
