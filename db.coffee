@@ -4,7 +4,7 @@ db.js v0.1.0
 class DB
   constructor: (storage) ->
     @collection = (name) ->
-      if name.indexOf(":") >= 0
+      if name.indexOf(':') >= 0
         throw "Invalid collection name #{name}"
       new Collection(name, storage)
 
@@ -14,39 +14,39 @@ class Collection
       serialize:   (object) -> JSON.stringify object
       deserialize: (string) -> if string? then JSON.parse string else null
 
-    @storage =
-      store: (docID, value) => storage.setItem(name + ":" + docID, serializer.serialize value)
-      retrieve: (docID) => serializer.deserialize(storage.getItem(name + ":" + docID))
-      remove: (docID) => storage.removeItem(name + ":" + docID)
-      exists: (docID) => storage.getItem(name + ":" + docID)?
-      keys: => docID[name.length + 1..] for docID in storage when name + ":" == docID[..name.length]
+    _this.storage =
+      store: (docID, value) -> storage.setItem(name + ":" + docID, serializer.serialize value)
+      retrieve: (docID) -> serializer.deserialize storage.getItem(name + ":" + docID)
+      remove: (docID) -> storage.removeItem(name + ":" + docID)
+      exists: (docID) -> storage.getItem(name + ":" + docID)?
+      keys: -> docID[name.length + 1..] for docID in storage when name + ":" == docID[..name.length]
 
   insert: (document) ->
     if document._id?
-      if not @storage.exists document._id
+      if not _this.storage.exists document._id
         docID = document._id
       else
         throw "Duplicate document key #{document._id}"
     else
-      docID = @_generateDocumentId()
-    @storage.store(docID, document)
+      docID = Collection.generateDocumentId()
+    _this.storage.store(docID, document)
     docID
 
   get: (docID) ->
-    doc = @storage.retrieve(docID)
+    doc = _this.storage.retrieve(docID)
     doc._id = docID # make sure _id attribute is set
     doc
 
   find: (criteria = {}, subset = {}) ->
-    @_subset(subset, doc) for doc in @documents() when @matches.criteria(criteria, doc)
+    Collection.subset(subset, doc) for doc in @documents() when Collection.matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    @storage.remove docID for docID in @_getDocumentsIds() when @matches.criteria(criteria, @storage.retrieve docID)
+    _this.storage.remove docID for docID in Collection.getDocumentsIds() when Collection.matches.criteria(criteria, @storage.retrieve docID)
 
-  documents: -> @get docID for docID in @storage.keys()
+  documents: -> @get docID for docID in _this.storage.keys()
 
-  matches:
-    criteria: (criteria, doc) ->
+  @matches =
+    criteria: (criteria, doc) =>
       switch typeof criteria
         when "object"
           for field, condition of criteria
@@ -59,7 +59,6 @@ class Collection
           true
 
     condition: (doc, field, condition) =>
-      return false if field not in doc
       value = doc[field]
       switch typeof condition
         when "number", "string", "boolean"
@@ -93,11 +92,11 @@ class Collection
 
   # generate random 4 character hex string
   # http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-  _generateBlock: -> Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1)
+  @generateBlock = -> Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1)
 
-  _generateDocumentId: -> (@_generateBlock() for i in [1..3]).join ''
+  @generateDocumentId = -> (Collection.generateBlock() for i in [1..3]).join ''
 
-  _subset: (subset, doc) ->
+  @subset = (subset, doc) ->
     doc # TODO
 
 if @localStorage

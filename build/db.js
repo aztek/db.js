@@ -11,7 +11,7 @@ db.js v0.1.0
 
     function DB(storage) {
       this.collection = function(name) {
-        if (name.indexOf(":") >= 0) throw "Invalid collection name " + name;
+        if (name.indexOf(':') >= 0) throw "Invalid collection name " + name;
         return new Collection(name, storage);
       };
     }
@@ -24,8 +24,7 @@ db.js v0.1.0
     var _this = this;
 
     function Collection(name, storage) {
-      var serializer,
-        _this = this;
+      var a, serializer;
       serializer = {
         serialize: function(object) {
           return JSON.stringify(object);
@@ -38,7 +37,14 @@ db.js v0.1.0
           }
         }
       };
-      this.storage = {
+      a = 10;
+      this.b = 20;
+      ({
+        c: function() {
+          return 30;
+        }
+      });
+      _this.storage = {
         store: function(docID, value) {
           return storage.setItem(name + ":" + docID, serializer.serialize(value));
         },
@@ -68,21 +74,21 @@ db.js v0.1.0
     Collection.prototype.insert = function(document) {
       var docID;
       if (document._id != null) {
-        if (!this.storage.exists(document._id)) {
+        if (!_this.storage.exists(document._id)) {
           docID = document._id;
         } else {
           throw "Duplicate document key " + document._id;
         }
       } else {
-        docID = this._generateDocumentId();
+        docID = Collection.generateDocumentId();
       }
-      this.storage.store(docID, document);
+      _this.storage.store(docID, document);
       return docID;
     };
 
     Collection.prototype.get = function(docID) {
       var doc;
-      doc = this.storage.retrieve(docID);
+      doc = _this.storage.retrieve(docID);
       doc._id = docID;
       return doc;
     };
@@ -95,8 +101,8 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         doc = _ref[_i];
-        if (this.matches.criteria(criteria, doc)) {
-          _results.push(this._subset(subset, doc));
+        if (Collection.matches.criteria(criteria, doc)) {
+          _results.push(Collection.subset(subset, doc));
         }
       }
       return _results;
@@ -105,12 +111,12 @@ db.js v0.1.0
     Collection.prototype.remove = function(criteria) {
       var docID, _i, _len, _ref, _results;
       if (criteria == null) criteria = {};
-      _ref = this._getDocumentsIds();
+      _ref = Collection.getDocumentsIds();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docID = _ref[_i];
-        if (this.matches.criteria(criteria, this.storage.retrieve(docID))) {
-          _results.push(this.storage.remove(docID));
+        if (Collection.matches.criteria(criteria, this.storage.retrieve(docID))) {
+          _results.push(_this.storage.remove(docID));
         }
       }
       return _results;
@@ -118,7 +124,7 @@ db.js v0.1.0
 
     Collection.prototype.documents = function() {
       var docID, _i, _len, _ref, _results;
-      _ref = this.storage.keys();
+      _ref = _this.storage.keys();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docID = _ref[_i];
@@ -127,14 +133,16 @@ db.js v0.1.0
       return _results;
     };
 
-    Collection.prototype.matches = {
+    Collection.matches = {
       criteria: function(criteria, doc) {
         var condition, field;
         switch (typeof criteria) {
           case "object":
             for (field in criteria) {
               condition = criteria[field];
-              if (!this.matches.condition(doc, field, condition)) return false;
+              if (!Collection.matches.condition(doc, field, condition)) {
+                return false;
+              }
             }
             return true;
           case "function":
@@ -145,7 +153,6 @@ db.js v0.1.0
       },
       condition: function(doc, field, condition) {
         var operand, operator, value;
-        if (__indexOf.call(doc, field) < 0) return false;
         value = doc[field];
         switch (typeof condition) {
           case "number":
@@ -210,23 +217,23 @@ db.js v0.1.0
       }
     };
 
-    Collection.prototype._generateBlock = function() {
+    Collection.generateBlock = function() {
       return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
     };
 
-    Collection.prototype._generateDocumentId = function() {
+    Collection.generateDocumentId = function() {
       var i;
       return ((function() {
         var _results;
         _results = [];
         for (i = 1; i <= 3; i++) {
-          _results.push(this._generateBlock());
+          _results.push(Collection.generateBlock());
         }
         return _results;
-      }).call(this)).join('');
+      })()).join('');
     };
 
-    Collection.prototype._subset = function(subset, doc) {
+    Collection.subset = function(subset, doc) {
       return doc;
     };
 

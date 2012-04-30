@@ -15,12 +15,8 @@
     it("should insert documents without ids", function() {
       var collection, doc, key;
       doc = {
-        a: "10",
-        b: "foo",
-        c: {
-          d: false,
-          e: [null, {}]
-        }
+        a: 42,
+        b: "foo"
       };
       collection = db.collection("something");
       key = collection.insert(doc);
@@ -31,12 +27,8 @@
       var collection, doc, key;
       doc = {
         _id: "10",
-        a: 10,
-        b: "foo",
-        c: {
-          d: false,
-          e: [null, {}]
-        }
+        a: 42,
+        b: "foo"
       };
       collection = db.collection("something");
       key = collection.insert(doc);
@@ -48,11 +40,7 @@
       doc = {
         _id: "10",
         a: 10,
-        b: "foo",
-        c: {
-          d: false,
-          e: [null, {}]
-        }
+        b: "foo"
       };
       collection = db.collection("something");
       collection.insert(doc);
