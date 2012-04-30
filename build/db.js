@@ -101,6 +101,21 @@ db.js v0.1.0
       return _results;
     };
 
+    Collection.prototype.findOne = function(criteria, subset) {
+      var doc, docID, _i, _len, _ref;
+      if (criteria == null) criteria = {};
+      if (subset == null) subset = {};
+      _ref = Collection.storage.keys();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        docID = _ref[_i];
+        doc = this.get(docID);
+        if (Collection.matches.criteria(criteria, doc)) {
+          return Collection.subset(subset, doc);
+        }
+      }
+      return null;
+    };
+
     Collection.prototype.remove = function(criteria) {
       var doc, _i, _len, _ref, _results;
       if (criteria == null) criteria = {};

@@ -40,6 +40,13 @@ class Collection
   find: (criteria = {}, subset = {}) ->
     Collection.subset(subset, doc) for doc in @documents() when Collection.matches.criteria(criteria, doc)
 
+  findOne: (criteria = {}, subset = {}) ->
+    for docID in Collection.storage.keys()
+      doc = @get docID
+      if Collection.matches.criteria(criteria, doc)
+        return Collection.subset(subset, doc)
+    null
+
   remove: (criteria = {}) ->
     Collection.storage.remove doc._id for doc in @documents() when Collection.matches.criteria(criteria, doc)
 

@@ -49,7 +49,7 @@
       }).toThrow("Duplicate document key 10");
     });
     it("should find all inserted documents", function() {
-      var collection, doc, docs, foundDocs, _i, _j, _len, _len2, _results;
+      var collection, doc, docs, foundDocs, _i, _j, _len, _len2;
       docs = [
         {
           _id: "foo"
@@ -65,14 +65,13 @@
         collection.insert(doc);
       }
       foundDocs = collection.find();
-      _results = [];
       for (_j = 0, _len2 = docs.length; _j < _len2; _j++) {
         doc = docs[_j];
-        _results.push(expect(foundDocs).toContain(doc));
+        expect(foundDocs).toContain(doc);
       }
-      return _results;
+      return expect(foundDocs).toContain(collection.findOne());
     });
-    return it("should find document by functional criteria", function() {
+    it("should find documents by functional criteria", function() {
       var collection, doc, docs, _i, _len;
       docs = [
         {
@@ -83,18 +82,71 @@
           _id: "baz"
         }
       ];
-      collection = db.collection("find_all");
+      collection = db.collection("find");
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
         collection.insert(doc);
       }
-      return expect(collection.find(function(doc) {
+      return expect(collection.findOne(function(doc) {
         return doc._id === "bar";
-      })).toEqual([
-        {
-          _id: "bar"
-        }
-      ]);
+      })).toEqual({
+        _id: "bar"
+      });
+    });
+    return it("should find documents by exact equality", function() {
+      var bar, collection, doc, docs, foo, qux, wtf, _i, _len;
+      foo = {
+        _id: '1',
+        a: 10,
+        b: "foo",
+        c: true,
+        d: [5, false, "yui"]
+      };
+      bar = {
+        _id: '2',
+        a: 20,
+        b: "bar",
+        c: false,
+        d: [true, "zxc", 4]
+      };
+      qux = {
+        _id: '3',
+        a: 30,
+        b: "qux",
+        c: true,
+        d: ["mnb", false, 1]
+      };
+      wtf = {
+        _id: '4',
+        a: "wtf",
+        b: 80,
+        c: null,
+        d: []
+      };
+      docs = [foo, bar, qux, wtf];
+      collection = db.collection("find_exacts");
+      for (_i = 0, _len = docs.length; _i < _len; _i++) {
+        doc = docs[_i];
+        collection.insert(doc);
+      }
+      expect(collection.find({
+        a: 10
+      })).toEqual([foo]);
+      expect(collection.findOne({
+        a: 10
+      })).toEqual(foo);
+      expect(collection.find({
+        c: false
+      })).toEqual([bar]);
+      expect(collection.findOne({
+        c: false
+      })).toEqual(bar);
+      expect(collection.find({
+        b: "qux"
+      })).toEqual([qux]);
+      return expect(collection.findOne({
+        b: "qux"
+      })).toEqual(qux);
     });
   });
 

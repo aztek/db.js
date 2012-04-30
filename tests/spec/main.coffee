@@ -39,9 +39,29 @@ describe "db.js", ->
     collection.insert doc for doc in docs
     foundDocs = collection.find()
     expect(foundDocs).toContain doc for doc in docs
+    expect(foundDocs).toContain collection.findOne()
 
-  it "should find document by functional criteria", ->
+  it "should find documents by functional criteria", ->
     docs = [{_id: "foo"}, {_id: "bar"}, {_id: "baz"}]
-    collection = db.collection "find_all"
+    collection = db.collection "find"
     collection.insert doc for doc in docs
-    expect(collection.find((doc) -> doc._id == "bar")).toEqual [{_id: "bar"}]
+    expect(collection.findOne((doc) -> doc._id == "bar")).toEqual {_id: "bar"}
+
+  it "should find documents by exact equality", ->
+    foo = {_id: '1', a: 10, b: "foo", c: true,  d: [5, false, "yui"]}
+    bar = {_id: '2', a: 20, b: "bar", c: false, d: [true, "zxc", 4]}
+    qux = {_id: '3', a: 30, b: "qux", c: true,  d: ["mnb", false, 1]}
+    wtf = {_id: '4', a: "wtf", b: 80, c: null,  d: []}
+    docs = [foo, bar, qux, wtf]
+    collection = db.collection "find_exacts"
+    collection.insert doc for doc in docs
+
+    expect(collection.find({a: 10})).toEqual [foo]
+    expect(collection.findOne({a: 10})).toEqual foo
+
+    expect(collection.find({c: false})).toEqual [bar]
+    expect(collection.findOne({c: false})).toEqual bar
+
+    expect(collection.find({b: "qux"})).toEqual [qux]
+    expect(collection.findOne({b: "qux"})).toEqual qux
+
