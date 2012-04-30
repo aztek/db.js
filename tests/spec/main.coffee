@@ -39,3 +39,9 @@ describe "db.js", ->
     collection.insert doc for doc in docs
     foundDocs = collection.find()
     expect(foundDocs).toContain doc for doc in docs
+
+  it "should find document by functional criteria", ->
+    docs = [{_id: "foo"}, {_id: "bar"}, {_id: "baz"}]
+    collection = db.collection "find_all"
+    collection.insert doc for doc in docs
+    expect(collection.find((doc) -> doc._id == "bar")).toEqual [{_id: "bar"}]

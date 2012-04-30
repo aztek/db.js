@@ -41,7 +41,7 @@ class Collection
     Collection.subset(subset, doc) for doc in @documents() when Collection.matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    Collection.storage.remove docID for docID in Collection.getDocumentsIds() when Collection.matches.criteria(criteria, Collection.storage.retrieve docID)
+    Collection.storage.remove doc._id for doc in @documents() when Collection.matches.criteria(criteria, doc)
 
   documents: -> @get docID for docID in Collection.storage.keys()
 

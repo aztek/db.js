@@ -48,7 +48,7 @@
         return collection.insert(doc);
       }).toThrow("Duplicate document key 10");
     });
-    return it("should find all inserted documents", function() {
+    it("should find all inserted documents", function() {
       var collection, doc, docs, foundDocs, _i, _j, _len, _len2, _results;
       docs = [
         {
@@ -71,6 +71,30 @@
         _results.push(expect(foundDocs).toContain(doc));
       }
       return _results;
+    });
+    return it("should find document by functional criteria", function() {
+      var collection, doc, docs, _i, _len;
+      docs = [
+        {
+          _id: "foo"
+        }, {
+          _id: "bar"
+        }, {
+          _id: "baz"
+        }
+      ];
+      collection = db.collection("find_all");
+      for (_i = 0, _len = docs.length; _i < _len; _i++) {
+        doc = docs[_i];
+        collection.insert(doc);
+      }
+      return expect(collection.find(function(doc) {
+        return doc._id === "bar";
+      })).toEqual([
+        {
+          _id: "bar"
+        }
+      ]);
     });
   });
 

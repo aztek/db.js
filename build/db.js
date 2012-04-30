@@ -102,14 +102,14 @@ db.js v0.1.0
     };
 
     Collection.prototype.remove = function(criteria) {
-      var docID, _i, _len, _ref, _results;
+      var doc, _i, _len, _ref, _results;
       if (criteria == null) criteria = {};
-      _ref = Collection.getDocumentsIds();
+      _ref = this.documents();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        docID = _ref[_i];
-        if (Collection.matches.criteria(criteria, Collection.storage.retrieve(docID))) {
-          _results.push(Collection.storage.remove(docID));
+        doc = _ref[_i];
+        if (Collection.matches.criteria(criteria, doc)) {
+          _results.push(Collection.storage.remove(doc._id));
         }
       }
       return _results;
