@@ -14,26 +14,26 @@ class Collection
       serialize:   (object) -> JSON.stringify object
       deserialize: (string) -> if string? then JSON.parse string else null
 
-    _this.storage =
+    Collection.storage =
       store: (docID, value) -> storage.setItem(name + ":" + docID, serializer.serialize value)
       retrieve: (docID) -> serializer.deserialize storage.getItem(name + ":" + docID)
       remove: (docID) -> storage.removeItem(name + ":" + docID)
       exists: (docID) -> storage.getItem(name + ":" + docID)?
       keys: -> docID[name.length + 1..] for docID in storage when name + ":" == docID[..name.length]
 
-  insert: (document) ->
-    if document._id?
-      if not _this.storage.exists document._id
-        docID = document._id
+  insert: (doc) ->
+    if doc._id?
+      if not Collection.storage.exists doc._id
+        docID = doc._id
       else
-        throw "Duplicate document key #{document._id}"
+        throw "Duplicate document key #{doc._id}"
     else
       docID = Collection.generateDocumentId()
-    _this.storage.store(docID, document)
+    Collection.storage.store(docID, doc)
     docID
 
   get: (docID) ->
-    doc = _this.storage.retrieve(docID)
+    doc = Collection.storage.retrieve(docID)
     doc._id = docID # make sure _id attribute is set
     doc
 
@@ -41,9 +41,9 @@ class Collection
     Collection.subset(subset, doc) for doc in @documents() when Collection.matches.criteria(criteria, doc)
 
   remove: (criteria = {}) ->
-    _this.storage.remove docID for docID in Collection.getDocumentsIds() when Collection.matches.criteria(criteria, @storage.retrieve docID)
+    Collection.storage.remove docID for docID in Collection.getDocumentsIds() when Collection.matches.criteria(criteria, Collection.storage.retrieve docID)
 
-  documents: -> @get docID for docID in _this.storage.keys()
+  documents: -> @get docID for docID in Collection.storage.keys()
 
   @matches =
     criteria: (criteria, doc) =>

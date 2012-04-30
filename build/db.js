@@ -24,7 +24,7 @@ db.js v0.1.0
     var _this = this;
 
     function Collection(name, storage) {
-      var a, serializer;
+      var serializer;
       serializer = {
         serialize: function(object) {
           return JSON.stringify(object);
@@ -37,14 +37,7 @@ db.js v0.1.0
           }
         }
       };
-      a = 10;
-      this.b = 20;
-      ({
-        c: function() {
-          return 30;
-        }
-      });
-      _this.storage = {
+      Collection.storage = {
         store: function(docID, value) {
           return storage.setItem(name + ":" + docID, serializer.serialize(value));
         },
@@ -71,24 +64,24 @@ db.js v0.1.0
       };
     }
 
-    Collection.prototype.insert = function(document) {
+    Collection.prototype.insert = function(doc) {
       var docID;
-      if (document._id != null) {
-        if (!_this.storage.exists(document._id)) {
-          docID = document._id;
+      if (doc._id != null) {
+        if (!Collection.storage.exists(doc._id)) {
+          docID = doc._id;
         } else {
-          throw "Duplicate document key " + document._id;
+          throw "Duplicate document key " + doc._id;
         }
       } else {
         docID = Collection.generateDocumentId();
       }
-      _this.storage.store(docID, document);
+      Collection.storage.store(docID, doc);
       return docID;
     };
 
     Collection.prototype.get = function(docID) {
       var doc;
-      doc = _this.storage.retrieve(docID);
+      doc = Collection.storage.retrieve(docID);
       doc._id = docID;
       return doc;
     };
@@ -115,8 +108,8 @@ db.js v0.1.0
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docID = _ref[_i];
-        if (Collection.matches.criteria(criteria, this.storage.retrieve(docID))) {
-          _results.push(_this.storage.remove(docID));
+        if (Collection.matches.criteria(criteria, Collection.storage.retrieve(docID))) {
+          _results.push(Collection.storage.remove(docID));
         }
       }
       return _results;
@@ -124,7 +117,7 @@ db.js v0.1.0
 
     Collection.prototype.documents = function() {
       var docID, _i, _len, _ref, _results;
-      _ref = _this.storage.keys();
+      _ref = Collection.storage.keys();
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         docID = _ref[_i];
