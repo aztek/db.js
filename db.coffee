@@ -79,7 +79,7 @@ class Collection
               return false
           true
         when "function"
-          not not condition value # convert to boolean
+          !!condition value # convert to boolean
         else
           true
 
@@ -93,8 +93,14 @@ class Collection
         when "$exists" then operand == (value != undefined)
         when "$in"  then value in operand
         when "$nin" then value not in operand
-        when "$all" then (value instanceof Array) && ((elem for elem in value if elem not in operand).length == 0)
         when "$size" then (value instanceof Array) && (value.length == operand)
+        when "$all"
+          if !(value instanceof Array) || (value.length == 0)
+            return false
+          for elem in value
+            if elem not in operand
+              return false
+          true
         else true
 
   # generate random 4 character hex string

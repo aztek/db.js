@@ -187,7 +187,7 @@ db.js v0.1.0
         }
       },
       operator: function(value, operator, operand) {
-        var elem;
+        var elem, _i, _len;
         switch (operator) {
           case "$ne":
             return value !== operand;
@@ -205,20 +205,15 @@ db.js v0.1.0
             return __indexOf.call(operand, value) >= 0;
           case "$nin":
             return __indexOf.call(operand, value) < 0;
-          case "$all":
-            return (value instanceof Array) && (((function() {
-              var _i, _len, _results;
-              if (__indexOf.call(operand, elem) < 0) {
-                _results = [];
-                for (_i = 0, _len = value.length; _i < _len; _i++) {
-                  elem = value[_i];
-                  _results.push(elem);
-                }
-                return _results;
-              }
-            })()).length === 0);
           case "$size":
             return (value instanceof Array) && (value.length === operand);
+          case "$all":
+            if (!(value instanceof Array) || (value.length === 0)) return false;
+            for (_i = 0, _len = value.length; _i < _len; _i++) {
+              elem = value[_i];
+              if (__indexOf.call(operand, elem) < 0) return false;
+            }
+            return true;
           default:
             return true;
         }
