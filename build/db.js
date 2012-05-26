@@ -243,9 +243,11 @@ db.js v0.1.0
     try {
       this.sdb = DB(this.sessionStorage);
     } catch (e) {
+      console.error("Session storage is either not supported or not available during this session");
       this.sdb = null;
     }
   } else {
+    console.error("Local storage is not supported");
     this.db = this.sdb = null;
   }
 

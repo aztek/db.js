@@ -113,10 +113,13 @@ class Collection
 
 if @localStorage
   @db = DB @localStorage
+
   try
     @sdb = DB @sessionStorage
   catch e
     # sessionStorage in not available on local web pages
+    console.error "Session storage is either not supported or not available during this session"
     @sdb = null
 else
+  console.error "Local storage is not supported"
   @db = @sdb = null
