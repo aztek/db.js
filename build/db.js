@@ -7,18 +7,12 @@ db.js v0.1.0
   var Collection, DB,
     __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  DB = (function() {
-
-    function DB(storage) {
-      this.collection = function(name) {
-        if (name.indexOf(':') >= 0) throw "Invalid collection name " + name;
-        return new Collection(name, storage);
-      };
-    }
-
-    return DB;
-
-  })();
+  DB = function(storage) {
+    return function(name) {
+      if (name.indexOf(':') >= 0) throw "Invalid collection name " + name;
+      return new Collection(name, storage);
+    };
+  };
 
   Collection = (function() {
     var _this = this;
@@ -245,9 +239,9 @@ db.js v0.1.0
   }).call(this);
 
   if (this.localStorage) {
-    this.db = new DB(this.localStorage);
+    this.db = DB(this.localStorage);
     try {
-      this.sdb = new DB(this.sessionStorage);
+      this.sdb = DB(this.sessionStorage);
     } catch (e) {
       this.sdb = null;
     }

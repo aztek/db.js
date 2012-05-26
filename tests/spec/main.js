@@ -7,10 +7,10 @@
     }));
     it("should create collections with valid names", function() {
       expect(function() {
-        return db.collection("aA1-?!@#$%^&*().,");
+        return db("aA1-?!@#$%^&*().,");
       }).not.toThrow("Invalid collection name aA1-?!@#$%^&*().,");
       return expect(function() {
-        return db.collection("foo:bar");
+        return db("foo:bar");
       }).toThrow("Invalid collection name foo:bar");
     });
     it("should insert documents without ids", function() {
@@ -19,7 +19,7 @@
         a: 42,
         b: "foo"
       };
-      collection = db.collection("something");
+      collection = db("something");
       key = collection.insert(doc);
       doc._id = key;
       return expect(collection.get(key)).toEqual(doc);
@@ -31,7 +31,7 @@
         a: 42,
         b: "foo"
       };
-      collection = db.collection("something");
+      collection = db("something");
       key = collection.insert(doc);
       expect(key).toEqual("10");
       return expect(collection.get(key)).toEqual(doc);
@@ -43,7 +43,7 @@
         a: 10,
         b: "foo"
       };
-      collection = db.collection("something");
+      collection = db("something");
       collection.insert(doc);
       return expect(function() {
         return collection.insert(doc);
@@ -60,7 +60,7 @@
           _id: "baz"
         }
       ];
-      collection = db.collection("find_all");
+      collection = db("find_all");
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
         collection.insert(doc);
@@ -83,7 +83,7 @@
           _id: "baz"
         }
       ];
-      collection = db.collection("find");
+      collection = db("find");
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
         collection.insert(doc);
@@ -125,7 +125,7 @@
         d: []
       };
       docs = [foo, bar, qux, wtf];
-      collection = db.collection("find_exacts");
+      collection = db("find_exacts");
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
         collection.insert(doc);
@@ -164,7 +164,7 @@
         d: ["mnb", false, 1]
       };
       docs = [foo, bar, qux];
-      collection = db.collection("find_fun_attrs");
+      collection = db("find_fun_attrs");
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
         collection.insert(doc);
@@ -214,7 +214,7 @@
         e: 42
       };
       docs = [foo, bar, qux, wtf];
-      collection = db.collection("find_exacts");
+      collection = db("find_exacts");
       for (_i = 0, _len = docs.length; _i < _len; _i++) {
         doc = docs[_i];
         collection.insert(doc);

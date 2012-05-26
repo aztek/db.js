@@ -1,12 +1,11 @@
 ###
 db.js v0.1.0
 ###
-class DB
-  constructor: (storage) ->
-    @collection = (name) ->
-      if name.indexOf(':') >= 0
-        throw "Invalid collection name #{name}"
-      new Collection(name, storage)
+DB = (storage) ->
+       (name) ->
+         if name.indexOf(':') >= 0
+           throw "Invalid collection name #{name}"
+         new Collection(name, storage)
 
 class Collection
   constructor: (name, storage) ->
@@ -113,9 +112,9 @@ class Collection
     doc # TODO
 
 if @localStorage
-  @db = new DB @localStorage
+  @db = DB @localStorage
   try
-    @sdb = new DB @sessionStorage
+    @sdb = DB @sessionStorage
   catch e
     # sessionStorage in not available on local web pages
     @sdb = null
