@@ -94,7 +94,7 @@ class Collection
         when "$nin" then value not in operand
         when "$size" then (value instanceof Array) && (value.length == operand)
         when "$all"
-          if !(value instanceof Array) || (value.length == 0)
+          if not (value instanceof Array) || (value.length == 0)
             return false
           for elem in value
             if elem not in operand
