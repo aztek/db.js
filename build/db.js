@@ -167,6 +167,9 @@ db.js v0.1.0
             }
             break;
           case "object":
+            if (condition instanceof RegExp) {
+              return (typeof value === "string") && (value.search(condition) !== -1);
+            }
             for (operator in condition) {
               operand = condition[operator];
               if (!Collection.matches.operator(value, operator, operand)) {
@@ -208,6 +211,8 @@ db.js v0.1.0
               if (__indexOf.call(operand, elem) < 0) return false;
             }
             return true;
+          case "$regex":
+            return (typeof value === "string") && (value.search(operand) !== -1);
           default:
             return true;
         }

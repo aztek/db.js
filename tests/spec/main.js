@@ -149,6 +149,38 @@
         b: "qux"
       })).toEqual(qux);
     });
+    it("should find documents by regular expression", function() {
+      var collection, doc, docs, _i, _len;
+      docs = [
+        {
+          _id: "foo"
+        }, {
+          _id: "bar"
+        }, {
+          _id: "baz"
+        }
+      ];
+      collection = db("find");
+      for (_i = 0, _len = docs.length; _i < _len; _i++) {
+        doc = docs[_i];
+        collection.insert(doc);
+      }
+      expect(collection.findOne({
+        _id: /o/
+      })).toEqual({
+        _id: "foo"
+      });
+      expect(collection.find({
+        _id: /z|r/
+      })).toContain({
+        _id: "bar"
+      });
+      return expect(collection.find({
+        _id: /z|r/
+      })).toContain({
+        _id: "baz"
+      });
+    });
     it("should find documents by functional criteria on attributes", function() {
       var bar, collection, doc, docs, foo, foundDocs, qux, _i, _len;
       foo = {
@@ -311,11 +343,21 @@
           $size: 0
         }
       })).toEqual([wtf]);
-      return expect(collection.find({
+      expect(collection.find({
         d: {
           $all: ["zxc", -4, true]
         }
       })).toEqual([bar]);
+      expect(collection.find({
+        b: {
+          $regex: /f./
+        }
+      })).toContain(foo);
+      return expect(collection.find({
+        b: {
+          $regex: "ux"
+        }
+      })).toContain(qux);
     });
   });
 

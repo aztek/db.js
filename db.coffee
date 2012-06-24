@@ -73,6 +73,9 @@ class Collection
           else
             value == condition
         when "object"
+          if condition instanceof RegExp
+            return (typeof value == "string") && (value.search(condition) != -1)
+
           for operator, operand of condition
             if not @matches.operator(value, operator, operand)
               return false
@@ -100,6 +103,7 @@ class Collection
             if elem not in operand
               return false
           true
+        when "$regex" then (typeof value == "string") && (value.search(operand) != -1)
         else true
 
   # generate random 4 character hex string

@@ -65,6 +65,14 @@ describe "db.js", ->
     expect(collection.find {b: "qux"}).toEqual [qux]
     expect(collection.findOne {b: "qux"}).toEqual qux
 
+  it "should find documents by regular expression", ->
+    docs = [{_id: "foo"}, {_id: "bar"}, {_id: "baz"}]
+    collection = db "find"
+    collection.insert doc for doc in docs
+    expect(collection.findOne {_id: /o/}).toEqual {_id: "foo"}
+    expect(collection.find {_id: /z|r/}).toContain {_id: "bar"}
+    expect(collection.find {_id: /z|r/}).toContain {_id: "baz"}
+
   it "should find documents by functional criteria on attributes", ->
     foo = {_id: "foo", d: [5, false, "yui"]}
     bar = {_id: "bar", d: [true, "zxc", 4]}
@@ -106,3 +114,6 @@ describe "db.js", ->
     expect(collection.find {d: {$size: 0}}).toEqual [wtf]
 
     expect(collection.find {d: {$all: ["zxc", -4, true]}}).toEqual [bar]
+
+    expect(collection.find {b: {$regex: /f./}}).toContain foo
+    expect(collection.find {b: {$regex: "ux"}}).toContain qux
